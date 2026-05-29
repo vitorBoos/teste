@@ -1,0 +1,96 @@
+<!doctype html>
+<html>
+<head>
+    <link rel="stylesheet" href="theme.css">
+    <title>Pets - PetShop</title>
+</head>
+<body>
+    <div class="container" id="root"></div>
+    <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+    <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+    <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+    <script type="text/babel">
+      function PetsCrud() {
+        const [pets, setPets] = React.useState([]);
+        const [isModalOpen, setIsModalOpen] = React.useState(false);
+        const [formData, setFormData] = React.useState({name: '', breed: ''});
+        const [editingId, setEditingId] = React.useState(null);
+
+        React.useEffect(() => {
+            fetch('http://localhost:3000/api/pets').then(res => res.json()).then(setPets);
+        }, []);
+
+        const savePet = async () => {
+            const method = editingId ? 'PUT' : 'POST';
+            const url = editingId ? `http://localhost:3000/api/pets/${editingId}` : 'http://localhost:3000/api/pets';
+            await fetch(url, {
+                method,
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(formData)
+            });
+            setIsModalOpen(false);
+            const res = await fetch('http://localhost:3000/api/pets');
+            setPets(await res.json());
+        };
+
+        const deletePet = async (id) => {
+            if (confirm('Delete this pet?')) {
+                await fetch(`http://localhost:3000/api/pets/${id}`, {method: 'DELETE'});
+                setPets(pets.filter(p => p.id !== id));
+            }
+        };
+
+        return (
+          <div style={{paddingTop: '40px'}}>
+            <div class="card">
+                <h1>Pets</h1>
+                <button className="btn" onClick={() => {setEditingId(null); setFormData({name: '', breed: ''}); setIsModalOpen(true);}}>Create Pet</button>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Breed</th>
+                                <th style={{textAlign: 'right'}}>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {pets.map(p => (
+                                <tr key={p.id}>
+                                    <td>{p.name}</td>
+                                    <td>{p.breed}</td>
+                                    <td style={{textAlign: 'right'}}>
+                                        <button className="btn" style={{padding: '5px 10px', marginRight: '5px'}} onClick={() => {setEditingId(p.id); setFormData(p); setIsModalOpen(true);}}>Edit</button>
+                                        <button className="btn" style={{padding: '5px 10px', background: 'var(--muted)'}} onClick={() => deletePet(p.id)}>Delete</button>
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            {isModalOpen && (
+                <div class="modal-overlay">
+                    <div class="modal">
+                        <h2>{editingId ? 'Edit Pet' : 'Create Pet'}</h2>
+                        <div style={{marginBottom: '10px'}}>
+                            <input value={formData.name} className="input" onChange={e => setFormData({...formData, name: e.target.value})} placeholder="Name" />
+                        </div>
+                        <div style={{marginBottom: '10px'}}>
+                            <input value={formData.breed} className="input" onChange={e => setFormData({...formData, breed: e.target.value})} placeholder="Breed" />
+                        </div>
+                        <div class="flex" style={{justifyContent: 'flex-end', marginTop: '20px'}}>
+                            <button className="btn" style={{background: 'var(--muted)', marginRight: '10px'}} onClick={() => setIsModalOpen(false)}>Cancel</button>
+                            <button className="btn" onClick={savePet}>Save</button>
+                        </div>
+                    </div>
+                </div>
+            )}
+          </div>
+        );
+      }
+      const root = ReactDOM.createRoot(document.getElementById('root'));
+      root.render(<PetsCrud />);
+    </script>
+</body>
+</html>

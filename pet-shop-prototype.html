@@ -1,0 +1,234 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PetShop System Management</title>
+    <style>
+        :root {
+            --bg:      oklch(99% 0.002 240);
+            --surface: oklch(100% 0 0);
+            --fg:      oklch(18% 0.012 250);
+            --muted:   oklch(54% 0.012 250);
+            --border:  oklch(92% 0.005 250);
+            --accent:  oklch(58% 0.18 255);
+            --font-display: -apple-system, BlinkMacSystemFont, 'SF Pro Display', system-ui, sans-serif;
+            --font-body:    -apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg);
+            color: var(--fg);
+            font-family: var(--font-body);
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            min-height: 100vh;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 1200px;
+            padding: 20px;
+        }
+
+        .card {
+            background-color: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .btn {
+            background-color: var(--accent);
+            color: var(--surface);
+            border: none;
+            border-radius: 8px;
+            padding: 10px 16px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        .btn-secondary {
+            background-color: var(--surface);
+            color: var(--fg);
+            border: 1px solid var(--border);
+        }
+
+        .input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            box-sizing: border-box;
+            margin-bottom: 10px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            padding: 12px;
+            border-bottom: 1px solid var(--border);
+            text-align: left;
+        }
+
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+    <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+    <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+    <script type="text/babel">
+        const { useState } = React;
+
+        function App() {
+            const [view, setView] = useState('login');
+            const [data, setData] = useState({
+                pets: [{id: 1, name: 'Rex', type: 'Dog'}],
+                users: [{id: 1, name: 'Admin', email: 'admin@petshop.com'}],
+                clients: [{id: 1, name: 'John Doe', phone: '123456789'}]
+            });
+
+            const handleLogin = (email, password) => {
+                if (email === 'admin@petshop.com' && password === 'password') {
+                    setView('dashboard');
+                } else {
+                    alert('Invalid credentials');
+                }
+            };
+
+            const saveData = (type, item) => {
+                setData(prev => {
+                    const list = prev[type];
+                    if (item.id) {
+                        return { ...prev, [type]: list.map(i => i.id === item.id ? item : i) };
+                    } else {
+                        return { ...prev, [type]: [...list, { ...item, id: Date.now() }] };
+                    }
+                });
+            };
+
+            const deleteItem = (type, id) => {
+                setData(prev => ({ ...prev, [type]: prev[type].filter(i => i.id !== id) }));
+            };
+
+            return (
+                <div className="container">
+                    {view === 'login' && <LoginScreen onLogin={handleLogin} />}
+                    {view === 'dashboard' && <DashboardScreen setView={setView} />}
+                    {['pets', 'users', 'clients'].includes(view) && 
+                        <CRUDScreen title={view.charAt(0).toUpperCase() + view.slice(1)} type={view} items={data[view]} saveData={saveData} deleteItem={deleteItem} setView={setView} />
+                    }
+                </div>
+            );
+        }
+
+        function LoginScreen({ onLogin }) {
+            const [email, setEmail] = useState('');
+            const [password, setPassword] = useState('');
+            return (
+                <div className="card" style={{ maxWidth: '400px', margin: '100px auto' }}>
+                    <h1>PetShop Login</h1>
+                    <input className="input" type="email" placeholder="Email" value={email} onChange={e => setEmail(e.target.value)} />
+                    <input className="input" type="password" placeholder="Password" value={password} onChange={e => setPassword(e.target.value)} />
+                    <button className="btn" onClick={() => onLogin(email, password)}>Entrar</button>
+                </div>
+            );
+        }
+
+        function DashboardScreen({ setView }) {
+            return (
+                <div className="card">
+                    <h1>PetShop System Management</h1>
+                    <p>Welcome back! Everything is running smoothly today.</p>
+                    <img src="dog-image.jpg" alt="Pet" style={{ width: '100%', borderRadius: '12px' }} />
+                    <div style={{ marginTop: '20px' }}>
+                        <button className="btn" onClick={() => setView('pets')}>Manage Pets</button>
+                        <button className="btn" onClick={() => setView('users')} style={{ marginLeft: '10px' }}>Manage Users</button>
+                        <button className="btn" onClick={() => setView('clients')} style={{ marginLeft: '10px' }}>Manage Clients</button>
+                    </div>
+                </div>
+            );
+        }
+
+        function CRUDScreen({ title, type, items, saveData, deleteItem, setView }) {
+            const [isModalOpen, setModalOpen] = useState(false);
+            const [isDeleteModalOpen, setDeleteModalOpen] = useState(false);
+            const [currentItem, setCurrentItem] = useState({});
+
+            const save = () => {
+                saveData(type, currentItem);
+                setModalOpen(false);
+            };
+
+            return (
+                <div className="card">
+                    <button className="btn btn-secondary" onClick={() => setView('dashboard')}>Back to Dashboard</button>
+                    <h1>Manage {title}</h1>
+                    <button className="btn" onClick={() => { setCurrentItem({}); setModalOpen(true); }}>Create {title}</button>
+                    <table>
+                        <thead>
+                            <tr><th>Name</th><th>Actions</th></tr>
+                        </thead>
+                        <tbody>
+                            {items.map(item => (
+                                <tr key={item.id}>
+                                    <td>{item.name}</td>
+                                    <td>
+                                        <button className="btn btn-secondary" onClick={() => { setCurrentItem(item); setModalOpen(true); }}>Edit</button>
+                                        <button className="btn" style={{ marginLeft: '5px' }} onClick={() => { setCurrentItem(item); setDeleteModalOpen(true); }}>Delete</button>
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                    
+                    {isModalOpen && (
+                        <div className="modal">
+                            <div className="card" style={{ width: '300px' }}>
+                                <h3>{currentItem.id ? 'Edit' : 'Create'} {title}</h3>
+                                <input className="input" placeholder="Name" value={currentItem.name || ''} onChange={e => setCurrentItem({...currentItem, name: e.target.value})} />
+                                <button className="btn" onClick={save}>Save</button>
+                                <button className="btn btn-secondary" onClick={() => setModalOpen(false)} style={{ marginLeft: '10px' }}>Cancel</button>
+                            </div>
+                        </div>
+                    )}
+
+                    {isDeleteModalOpen && (
+                        <div className="modal">
+                            <div className="card" style={{ width: '300px' }}>
+                                <h3>Confirm Delete</h3>
+                                <p>Are you sure you want to delete {currentItem.name}?</p>
+                                <button className="btn" onClick={() => { deleteItem(type, currentItem.id); setDeleteModalOpen(false); }}>Yes</button>
+                                <button className="btn btn-secondary" onClick={() => setDeleteModalOpen(false)} style={{ marginLeft: '10px' }}>Cancel</button>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            );
+        }
+
+        ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+    </script>
+</body>
+</html>

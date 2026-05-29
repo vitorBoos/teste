@@ -1,0 +1,87 @@
+<!doctype html>
+<html>
+<head>
+    <link rel="stylesheet" href="theme.css">
+</head>
+<body>
+    <div id="root"></div>
+    <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+    <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+    <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+    <script type="text/babel">
+      function CRUD({ title, apiEndpoint, fields }) {
+        const [data, setData] = React.useState([]);
+        const [modalOpen, setModalOpen] = React.useState(false);
+        const [currentItem, setCurrentItem] = React.useState(null);
+        const [deleteModal, setDeleteModal] = React.useState(false);
+        const [itemToDelete, setItemToDelete] = React.useState(null);
+
+        React.useEffect(() => {
+          fetch(`http://localhost:3000/api/${apiEndpoint}`).then(res => res.json()).then(setData);
+        }, []);
+
+        const saveItem = async (e) => {
+          e.preventDefault();
+          const formData = new FormData(e.target);
+          const body = Object.fromEntries(formData);
+          const method = currentItem ? 'PUT' : 'POST';
+          const url = currentItem ? `http://localhost:3000/api/${apiEndpoint}/${currentItem.id}` : `http://localhost:3000/api/${apiEndpoint}`;
+          await fetch(url, { method, headers: {'Content-Type': 'application/json'}, body: JSON.stringify(body) });
+          setModalOpen(false);
+          setCurrentItem(null);
+          const res = await fetch(`http://localhost:3000/api/${apiEndpoint}`);
+          setData(await res.json());
+        };
+
+        const deleteItem = async () => {
+          await fetch(`http://localhost:3000/api/${apiEndpoint}/${itemToDelete.id}`, { method: 'DELETE' });
+          setDeleteModal(false);
+          const res = await fetch(`http://localhost:3000/api/${apiEndpoint}`);
+          setData(await res.json());
+        };
+
+        return (
+          <div style={{padding: '20px'}}>
+            <h1>{title}</h1>
+            <button onClick={() => { setCurrentItem(null); setModalOpen(true); }}>Create</button>
+            <table style={{width: '100%', marginTop: '20px'}}>
+              <thead><tr>{fields.map(f => <th key={f}>{f}</th>)}<th>Actions</th></tr></thead>
+              <tbody>
+                {data.map(item => (
+                  <tr key={item.id}>
+                    {fields.map(f => <td key={f}>{item[f]}</td>)}
+                    <td>
+                      <button onClick={() => { setCurrentItem(item); setModalOpen(true); }}>Edit</button>
+                      <button onClick={() => { setItemToDelete(item); setDeleteModal(true); }}>Delete</button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            {modalOpen && (
+              <div style={{position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', background: 'rgba(0,0,0,0.5)'}}>
+                <form onSubmit={saveItem} style={{background: 'white', padding: '20px', width: '300px', margin: '100px auto'}}>
+                  {fields.map(f => <input key={f} name={f} placeholder={f} defaultValue={currentItem ? currentItem[f] : ''} required style={{display: 'block', width: '100%', marginBottom: '10px'}} />)}
+                  <button type="submit">Save</button>
+                  <button onClick={() => setModalOpen(false)}>Cancel</button>
+                </form>
+              </div>
+            )}
+            {deleteModal && (
+              <div style={{position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', background: 'rgba(0,0,0,0.5)'}}>
+                <div style={{background: 'white', padding: '20px', width: '300px', margin: '100px auto'}}>
+                  <p>Are you sure?</p>
+                  <button onClick={deleteItem}>Yes</button>
+                  <button onClick={() => setDeleteModal(false)}>No</button>
+                </div>
+              </div>
+            )}
+          </div>
+        );
+      }
+      const root = ReactDOM.createRoot(document.getElementById('root'));
+      // This is a placeholder, in a real scenario you would route between these
+      root.render(<CRUD title="Pets" apiEndpoint="pets" fields={['name', 'species']} />);
+    </script>
+</body>
+</html>

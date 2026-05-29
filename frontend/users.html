@@ -1,0 +1,72 @@
+<!doctype html>
+<html>
+<head>
+    <link rel="stylesheet" href="theme.css">
+    <title>Users - PetShop</title>
+</head>
+<body>
+    <div class="container" id="root"></div>
+    <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+    <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+    <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+    <script type="text/babel">
+      function UsersCrud() {
+        const [users, setUsers] = React.useState([{id: 1, name: 'Admin', email: 'admin@petshop.com'}]);
+        const [isModalOpen, setIsModalOpen] = React.useState(false);
+        const [formData, setFormData] = React.useState({name: '', email: ''});
+        const [editingId, setEditingId] = React.useState(null);
+
+        return (
+          <div style={{paddingTop: '40px'}}>
+            <div class="card">
+                <h1>Users</h1>
+                <button className="btn" onClick={() => {setEditingId(null); setFormData({name: '', email: ''}); setIsModalOpen(true);}}>Create User</button>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Email</th>
+                                <th style={{textAlign: 'right'}}>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {users.map(u => (
+                                <tr key={u.id}>
+                                    <td>{u.name}</td>
+                                    <td>{u.email}</td>
+                                    <td style={{textAlign: 'right'}}>
+                                        <button className="btn" style={{padding: '5px 10px', marginRight: '5px'}} onClick={() => {setEditingId(u.id); setFormData(u); setIsModalOpen(true);}}>Edit</button>
+                                        <button className="btn" style={{padding: '5px 10px', background: 'var(--muted)'}} onClick={() => confirm('Delete user?') && setUsers(users.filter(user => user.id !== u.id))}>Delete</button>
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            {isModalOpen && (
+                <div class="modal-overlay">
+                    <div class="modal">
+                        <h2>{editingId ? 'Edit User' : 'Create User'}</h2>
+                        <div style={{marginBottom: '10px'}}>
+                            <input value={formData.name} className="input" onChange={e => setFormData({...formData, name: e.target.value})} placeholder="Name" />
+                        </div>
+                        <div style={{marginBottom: '10px'}}>
+                            <input value={formData.email} className="input" onChange={e => setFormData({...formData, email: e.target.value})} placeholder="Email" />
+                        </div>
+                        <div class="flex" style={{justifyContent: 'flex-end', marginTop: '20px'}}>
+                            <button className="btn" style={{background: 'var(--muted)', marginRight: '10px'}} onClick={() => setIsModalOpen(false)}>Cancel</button>
+                            <button className="btn" onClick={() => setIsModalOpen(false)}>Save</button>
+                        </div>
+                    </div>
+                </div>
+            )}
+          </div>
+        );
+      }
+      const root = ReactDOM.createRoot(document.getElementById('root'));
+      root.render(<UsersCrud />);
+    </script>
+</body>
+</html>
